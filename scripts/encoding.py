@@ -2,13 +2,13 @@ import pandas as pd
 from sklearn import preprocessing
 
 
-def labelEndode(df,columns):
+def label_encode(df,columns):
     for column in df.columns:
         if  column in columns :
             df[column] = preprocessing.LabelEncoder().fit_transform(df[column]) 
     return df
 
-def ordinalEncode(df,columns,mappings):
+def ordinal_encode(df,columns,mappings):
     
     for column in df.columns:
         if column in columns:
@@ -34,7 +34,7 @@ def encode (df, label, one_hot,one_hot_top_cat, ordinal, ordinal_mapping):
     
     result = df.copy() # take a copy of the dataframe
     if(len(label)>0):
-        result= labelEndode(result,label)
+        result= label_encode(result,label)
     if(len(one_hot)>0): 
         one_hot_encoded_data = one_hot_encode(result,one_hot)
     
@@ -46,5 +46,5 @@ def encode (df, label, one_hot,one_hot_top_cat, ordinal, ordinal_mapping):
             one_hot_encode_top_categories(one_hot_encoded_data,column,top_x_cat)
             
     if (len(ordinal)>0):
-        ordinal_encoded=ordinalEncode(one_hot_encoded_data,ordinal,ordinal_mapping)
+        ordinal_encoded=ordinal_encode(one_hot_encoded_data,ordinal,ordinal_mapping)
     return ordinal_encoded
