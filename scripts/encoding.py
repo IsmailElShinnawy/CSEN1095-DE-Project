@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn import preprocessing
-
+import numpy as np
 
 def label_encode(df,columns):
     for column in df.columns:
@@ -30,8 +30,13 @@ def one_hot_encode_top_categories(df, variable, top_x_labels):
     for label in top_x_labels:
         df[variable + '_' + label] = np.where(
             df[variable] == label, 1, 0) 
-def encode (df, label, one_hot,one_hot_top_cat, ordinal, ordinal_mapping):
-    
+def encode (df):
+    label=['weather_conditions','road_surface_conditions','light_conditions',
+       'special_conditions_at_site','carriageway_hazards']
+    one_hot=['urban_or_rural_area','did_police_officer_attend_scene_of_accident','trunk_road_flag']
+    one_hot_top_cat={"pedestrian_crossing_physical_facilities" : 3}
+    ordinal=['accident_severity']
+    mapping={'accident_severity':{'Slight':0, 'Serious':1, 'Fatal':2}}
     result = df.copy() # take a copy of the dataframe
     if(len(label)>0):
         result= label_encode(result,label)
@@ -46,5 +51,5 @@ def encode (df, label, one_hot,one_hot_top_cat, ordinal, ordinal_mapping):
             one_hot_encode_top_categories(one_hot_encoded_data,column,top_x_cat)
             
     if (len(ordinal)>0):
-        ordinal_encoded=ordinal_encode(one_hot_encoded_data,ordinal,ordinal_mapping)
+        ordinal_encoded=ordinal_encode(one_hot_encoded_data,ordinal,mapping)
     return ordinal_encoded
