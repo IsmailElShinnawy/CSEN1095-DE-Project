@@ -29,7 +29,7 @@ def extract_transform_load(filename):
     encode(df)
     scale_data(df)
     augment_df(df)
-    write_df_to_csv_file(df, 'uk_accidents_2019_transformed')
+    write_df_to_csv_file(df, '/opt/airflow/data/uk_accidents_2019_transformed')
 
 with DAG(
     dag_id = 'uk_accidents_2019_etl_pipeline',
