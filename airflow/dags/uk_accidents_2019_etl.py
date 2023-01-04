@@ -4,6 +4,8 @@ from airflow.operators.python import PythonOperator
 
 import pandas as pd
 
+from sqlalchemy import create_engine
+
 from scripts.missing_data import impute_missing_data
 from scripts.duplicate_data import handle_duplicate_data
 from scripts.outliers import handle_outliers
@@ -25,7 +27,7 @@ default_args = {
 def web_scrape():
     df = pd.read_csv('/opt/airflow/data/uk_accidents_2019_transformed.csv')
     augment_df_with_population_data(df)
-    write_df_to_csv_file(df, '/opt/airflow/data/uk_accidents_2019_transformed_and_augmented.csv') 
+    write_df_to_csv_file(df, '/opt/airflow/data/uk_accidents_2019_transformed_and_augmented') 
 
 def extract_transform_load(filename):
     df = pd.read_csv(filename, index_col = 0, parse_dates = ['date'], na_values = ["Data missing or out of range", -1])
@@ -37,6 +39,15 @@ def extract_transform_load(filename):
     scale_data(df)
     augment_df(df)
     write_df_to_csv_file(df, '/opt/airflow/data/uk_accidents_2019_transformed')
+
+def load_to_postgres(filename, lookup_filename):
+    df = pd.read_csv(filename)
+    lookup = pd.read_csv(lookup_filename)
+    
+    engine = create_engine('postgresql://root:root@pgdatabase:5432/uk_accidents_2019')
+    
+    df.to_sql('UK_Accidents_2019', con = engine, if_exists = 'replace', index = False)
+    lookup.to_sql('lookup_table', con = engine, if_exists = 'replace', index = False)
 
 with DAG(
     dag_id = 'uk_accidents_2019_etl_pipeline',
@@ -61,4 +72,13 @@ with DAG(
         }
     )
 
-    extract_transform_load_task >> web_scraping_task
+    load_to_postgres_task = PythonOperator(
+        task_id = 'load_to_postgres_task',
+        python_callable = load_to_postgres,
+        op_kwargs={
+            "filename": '/opt/airflow/data/uk_accidents_2019_transformed_and_augmented.csv',
+            "lookup_filename": '/opt/airflow/data/lookup_table.csv'
+        }
+    )
+
+    extract_transform_load_task >> web_scraping_task >> load_to_postgres_task
