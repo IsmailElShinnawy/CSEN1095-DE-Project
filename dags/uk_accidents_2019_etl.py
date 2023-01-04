@@ -13,12 +13,19 @@ from scripts.scaling import scale_data
 from scripts.augmentation import augment_df
 from scripts.exporting import write_df_to_csv_file
 
+from scripts.web_scraping import augment_df_with_population_data
+
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
     'start_date': days_ago(2),
     "retries": 1,
 }
+
+def web_scrape():
+    df = pd.read_csv('/opt/airflow/data/uk_accidents_2019_transformed.csv')
+    augment_df_with_population_data(df)
+    write_df_to_csv_file(df, '/opt/airflow/data/uk_accidents_2019_transformed_and_augmented.csv') 
 
 def extract_transform_load(filename):
     df = pd.read_csv(filename, index_col = 0, parse_dates = ['date'], na_values = ["Data missing or out of range", -1])
@@ -45,3 +52,13 @@ with DAG(
             "filename": '/opt/airflow/data/2019_Accidents_UK.csv'
         },
     )
+
+    web_scraping_task = PythonOperator(
+        task_id = 'augment_df_task',
+        python_callable = web_scrape,
+        op_kwargs={
+            "filename": '/opt/airflow/data/uk_accidents_2019_transformed.csv'
+        }
+    )
+
+    extract_transform_load_task >> web_scraping_task
